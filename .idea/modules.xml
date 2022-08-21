@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/../partner-match-system/partner-match-system.iml" filepath="$PROJECT_DIR$/../partner-match-system/partner-match-system.iml" />
+      <module fileurl="file://$PROJECT_DIR$/user-center.iml" filepath="$PROJECT_DIR$/user-center.iml" />
+    </modules>
+  </component>
+</project>

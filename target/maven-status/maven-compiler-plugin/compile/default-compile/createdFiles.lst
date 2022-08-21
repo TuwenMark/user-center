@@ -1,0 +1,14 @@
+com\dongdong\usercenter\common\BaseResponse.class
+com\dongdong\usercenter\model\domain\request\UserRegisterRequest.class
+com\dongdong\usercenter\exception\BusinessException.class
+com\dongdong\usercenter\model\domain\request\UserLoginRequest.class
+com\dongdong\usercenter\constant\UserConstant.class
+com\dongdong\usercenter\utils\ResponseUtils.class
+com\dongdong\usercenter\service\UserService.class
+com\dongdong\usercenter\service\impl\UserServiceImpl.class
+com\dongdong\usercenter\UserCenterApplication.class
+com\dongdong\usercenter\common\ErrorCode.class
+com\dongdong\usercenter\mapper\UserMapper.class
+com\dongdong\usercenter\controller\UserController.class
+com\dongdong\usercenter\model\domain\User.class
+com\dongdong\usercenter\exception\GlobalExceptionHandler.class
