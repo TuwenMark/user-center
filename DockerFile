@@ -1,0 +1,16 @@
+# 依赖的基础镜像
+FROM maven:3.5-jdk-8-alpine as builder
+
+# Copy local code to the container image.
+# 工作目录，即项目所在的目录
+WORKDIR /app
+# “.”表示项目的工作目录，拷贝pom.xml和src目录到工作目录对应的文件中
+COPY pom.xml .
+COPY src ./src
+
+# Build a release artifact.
+# 打包，跳过测试阶段
+RUN mvn package -DskipTests
+
+# Run the web service on container startup. 部署
+CMD ["java","-jar","/app/target/user-center-0.0.1-SNAPSHOT.jar","--spring.profiles.active=prod"]
