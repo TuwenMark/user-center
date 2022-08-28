@@ -20,7 +20,9 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -206,7 +208,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	}
 
 	/**
-	 * 根据标签列表查询用户列表
+	 * 根据标签列表查询用户列表(通过内存查询)
 	 *
 	 * @param tagNameList 标签列表
 	 * @return	符合标签的用户列表
@@ -216,21 +218,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		if (CollectionUtils.isEmpty(tagNameList)) {
 			throw new BusinessException(ErrorCode.PARAMS_ERROR, "请输入需要搜索的标签");
 		}
-		// 方法一：通过SQL查询
-		/*
-		QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-		for (String tagName : tagNameList) {
-			queryWrapper = queryWrapper.like("tags", tagName);
-		}
-		return userMapper.selectList(queryWrapper).stream().map(this::getSafeUser).collect(Collectors.toList());
-		*/
-		
-		// 方法二：通过内存查询
 		QueryWrapper<User> queryWrapper = new QueryWrapper<>();
 		List<User> userList = userMapper.selectList(queryWrapper);
 		return userList.stream().filter(user -> {
 			String tags = user.getTags();
 			Set<String> tagNameSet = new Gson().fromJson(tags, new TypeToken<Set<String>>() {}.getType());
+			tagNameSet = Optional.ofNullable(tagNameSet).orElse(Collections.EMPTY_SET);
 			for (String tagName : tagNameList) {
 				if(! tagNameSet.contains(tagName)) {
 					return false;
@@ -238,6 +231,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 			}
 			return true;
 		}).map(this::getSafeUser).collect(Collectors.toList());
+	}
+
+	/**
+	 * 根据标签列表查询用户列表(通过SQL查询)
+	 *
+	 * @param tagNameList 标签列表
+	 * @return	符合标签条件的用户
+	 */
+	@Deprecated
+	public List<User> searchUsersByTagsThroughSQL(List<String> tagNameList) {
+		if (CollectionUtils.isEmpty(tagNameList)) {
+			throw new BusinessException(ErrorCode.PARAMS_ERROR, "请输入需要搜索的标签");
+		}
+		QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+		for (String tagName : tagNameList) {
+			queryWrapper = queryWrapper.like("tags", tagName);
+		}
+		return userMapper.selectList(queryWrapper).stream().map(this::getSafeUser).collect(Collectors.toList());
 	}
 
 	/**

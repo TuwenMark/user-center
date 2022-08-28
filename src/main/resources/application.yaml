@@ -5,6 +5,8 @@ server:
 spring:
   application:
     name: user-center
+  profiles:
+    active: dev
   session:
     timeout: 86400
   datasource:
@@ -12,6 +14,9 @@ spring:
     url: jdbc:mysql://192.168.15.135:3306/user_center?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=Asia/Shanghai
     username: root
     password: root
+  mvc:
+    pathmatch:
+      matching-strategy: ANT_PATH_MATCHER
 
 mybatis-plus:
   global-config:
