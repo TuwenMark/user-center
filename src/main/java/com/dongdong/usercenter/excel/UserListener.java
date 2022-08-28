@@ -29,14 +29,7 @@ public class UserListener implements ReadListener<UserInfo> {
      */
     @Override
     public void invoke(UserInfo data, AnalysisContext context) {
-        log.info("解析到一条数据:{}", JSON.toJSONString(data));
-        cachedDataList.add(data);
-        // 达到BATCH_COUNT了，需要去存储一次数据库，防止数据几万条数据在内存，容易OOM
-        if (cachedDataList.size() >= BATCH_COUNT) {
-            saveData();
-            // 存储完成清理 list
-            cachedDataList = ListUtils.newArrayListWithExpectedSize(BATCH_COUNT);
-        }
+        System.out.println(data);
     }
 
     /**
