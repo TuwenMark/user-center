@@ -9,6 +9,7 @@ import com.dongdong.usercenter.model.domain.request.UserLoginRequest;
 import com.dongdong.usercenter.model.domain.request.UserRegisterRequest;
 import com.dongdong.usercenter.service.impl.UserServiceImpl;
 import com.dongdong.usercenter.utils.ResponseUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
  **/
 @RestController
 @RequestMapping("/user")
+@CrossOrigin(origins = {"http://127.0.0.1:5173"})
 public class UserController {
 	@Resource
 	private UserServiceImpl userService;
@@ -106,6 +108,21 @@ public class UserController {
 		List<User> users = userService.list();
 		List<User> safeUsers = users.stream().map(user -> userService.getSafeUser(user)).collect(Collectors.toList());
 		return ResponseUtils.success(safeUsers);
+	}
+
+	/**
+	 * 根据标签查找用户
+	 *
+	 * @param tagNameList 标签列表
+	 * @return	符合标签的用户列表
+	 */
+	@GetMapping("/search/tags")
+	public BaseResponse<List<User>> searchUsersByTags(@RequestParam(required = false) List<String> tagNameList) {
+		if (CollectionUtils.isEmpty(tagNameList)) {
+			throw new BusinessException(ErrorCode.PARAMS_ERROR);
+		}
+		List<User> userList = userService.searchUsersByTags(tagNameList);
+		return ResponseUtils.success(userList);
 	}
 
 	/**

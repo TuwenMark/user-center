@@ -1,4 +1,4 @@
--- auto-generated definition
+-- 用户表
 create table user
 (
     id            bigint auto_increment comment '用户唯一标识'
@@ -25,4 +25,24 @@ create table user
         unique (user_account)
 )
     comment '用户表';
+
+-- 标签表
+create table tag
+(
+    id          bigint auto_increment comment '标签ID'
+        primary key,
+    tag_name    varchar(256)                       null comment '标签名',
+    user_id     bigint                             null comment '用户ID',
+    parent_id   bigint                             null comment '父标签ID',
+    is_parent   tinyint                            null comment '是否父标签，"0" 不是，"1" 是',
+    create_time datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    update_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
+    is_delete   tinyint  default 0                 not null comment '是否删除，"0" 未删除，"1" 已删除'
+)
+    comment '标签表';
+
+create index idx_userId
+    on tag (user_id);
+create unique index unidx_tagName
+    on tag (tag_name);
 

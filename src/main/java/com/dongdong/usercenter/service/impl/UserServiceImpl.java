@@ -220,14 +220,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		}
 		QueryWrapper<User> queryWrapper = new QueryWrapper<>();
 		List<User> userList = userMapper.selectList(queryWrapper);
+		Gson gson = new Gson();
 		return userList.stream().filter(user -> {
 			String tags = user.getTags();
-			Set<String> tagNameSet = new Gson().fromJson(tags, new TypeToken<Set<String>>() {}.getType());
+			Set<String> tagNameSet = gson.fromJson(tags, new TypeToken<Set<String>>(){}.getType());
 			tagNameSet = Optional.ofNullable(tagNameSet).orElse(Collections.EMPTY_SET);
-			for (String tagName : tagNameList) {
-				if(! tagNameSet.contains(tagName)) {
-					return false;
-				}
+//			for (String tagName : tagNameList) {
+//				if(! tagNameSet.contains(tagName)) {
+//					return false;
+//				}
+//			}
+			if (! tagNameSet.containsAll(tagNameList)) {
+				return false;
 			}
 			return true;
 		}).map(this::getSafeUser).collect(Collectors.toList());
@@ -267,6 +271,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		safeUser.setUserAccount(originUser.getUserAccount());
 		safeUser.setAvatarUrl(originUser.getAvatarUrl());
 		safeUser.setGender(originUser.getGender());
+		safeUser.setProfile(originUser.getProfile());
+		safeUser.setTags(originUser.getTags());
 		safeUser.setPhone(originUser.getPhone());
 		safeUser.setEmail(originUser.getEmail());
 		safeUser.setUserStatus(originUser.getUserStatus());

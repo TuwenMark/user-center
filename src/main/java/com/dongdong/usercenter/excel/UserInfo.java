@@ -1,5 +1,6 @@
 package com.dongdong.usercenter.excel;
 
+import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Data;
 
 /**
@@ -10,6 +11,9 @@ import lombok.Data;
  **/
 @Data
 public class UserInfo {
+	@ExcelProperty("用户昵称")
 	private String username;
+
+	@ExcelProperty("星球编号")
 	private Integer planetCode;
 }
