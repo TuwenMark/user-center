@@ -2,6 +2,11 @@ server:
   port: 8001
   servlet:
     context-path: /api
+    session:
+      cookie:
+        domain: localhost
+        #same-site: none
+        #secure: true
 spring:
   application:
     name: user-center

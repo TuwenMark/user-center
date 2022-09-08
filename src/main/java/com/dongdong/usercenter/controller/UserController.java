@@ -1,9 +1,10 @@
 package com.dongdong.usercenter.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.dongdong.usercenter.common.BaseResponse;
-import com.dongdong.usercenter.exception.BusinessException;
 import com.dongdong.usercenter.common.ErrorCode;
 import com.dongdong.usercenter.constant.UserConstant;
+import com.dongdong.usercenter.exception.BusinessException;
 import com.dongdong.usercenter.model.domain.User;
 import com.dongdong.usercenter.model.domain.request.UserLoginRequest;
 import com.dongdong.usercenter.model.domain.request.UserRegisterRequest;
@@ -28,7 +29,7 @@ import java.util.stream.Collectors;
  **/
 @RestController
 @RequestMapping("/user")
-@CrossOrigin(origins = {"http://127.0.0.1:5173"})
+@CrossOrigin(origins = {"http://localhost:5173"}, allowCredentials = "true")
 public class UserController {
 	@Resource
 	private UserServiceImpl userService;
@@ -94,54 +95,6 @@ public class UserController {
 	}
 
 	/**
-	 * 查找所有用户
-	 *
-	 * @param request 请求对象
-	 * @return 符合条件的用户列表
-	 */
-	@GetMapping("/search")
-	public BaseResponse<List<User>> searchUsers(HttpServletRequest request) {
-		// 校验是否是管理员
-		if (!isAdmin(request)) {
-			throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "用户非管理员");
-		}
-		List<User> users = userService.list();
-		List<User> safeUsers = users.stream().map(user -> userService.getSafeUser(user)).collect(Collectors.toList());
-		return ResponseUtils.success(safeUsers);
-	}
-
-	/**
-	 * 根据标签查找用户
-	 *
-	 * @param tagNameList 标签列表
-	 * @return	符合标签的用户列表
-	 */
-	@GetMapping("/search/tags")
-	public BaseResponse<List<User>> searchUsersByTags(@RequestParam(required = false) List<String> tagNameList) {
-		if (CollectionUtils.isEmpty(tagNameList)) {
-			throw new BusinessException(ErrorCode.PARAMS_ERROR);
-		}
-		List<User> userList = userService.searchUsersByTags(tagNameList);
-		return ResponseUtils.success(userList);
-	}
-
-	/**
-	 * 根据ID删除用户
-	 *
-	 * @param id      用户ID
-	 * @param request 请求对象
-	 * @return 删除的用户数量
-	 */
-	@DeleteMapping("/delete")
-	public BaseResponse<Integer> deleteUser(@RequestParam Long id, HttpServletRequest request) {
-		if (!isAdmin(request)) {
-			throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "用户非管理员");
-		}
-		Integer result = userService.deleteById(id);
-		return ResponseUtils.success(result);
-	}
-
-	/**
 	 * 获取当前用户
 	 *
 	 * @param request 请求对象
@@ -162,13 +115,85 @@ public class UserController {
 	}
 
 	/**
-	 * 判断是否是管理员
+	 * 查找所有用户
 	 *
 	 * @param request 请求对象
-	 * @return 判断结果
+	 * @return 符合条件的用户列表
 	 */
-	private static Boolean isAdmin(HttpServletRequest request) {
-		User safeUser = (User) request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
-		return UserConstant.ADMIN_ROLE.equals(safeUser.getUserRole());
+	@GetMapping("/search")
+	public BaseResponse<List<User>> searchUsers(@RequestParam(required = false) String username, HttpServletRequest request) {
+		// 校验是否是管理员
+		if (!userService.isAdmin(request)) {
+			throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "用户非管理员");
+		}
+		QueryWrapper queryWrapper = new QueryWrapper();
+		if (StringUtils.isNotBlank(username)) {
+			queryWrapper.like("username", username);
+		}
+		List<User> users = userService.list(queryWrapper);
+		List<User> safeUsers = users.stream().map(user -> userService.getSafeUser(user)).collect(Collectors.toList());
+		return ResponseUtils.success(safeUsers);
 	}
+
+	/**
+	 * 推荐所有用户
+	 *
+	 * @return 所有的用户列表
+	 */
+	@GetMapping("/recommend")
+	public BaseResponse<List<User>> recommendUsers() {
+		QueryWrapper queryWrapper = new QueryWrapper();
+		List<User> users = userService.list(queryWrapper);
+		List<User> safeUsers = users.stream().map(user -> userService.getSafeUser(user)).collect(Collectors.toList());
+		return ResponseUtils.success(safeUsers);
+	}
+
+	/**
+	 * 根据标签查找用户
+	 *
+	 * @param tagNameList 标签列表
+	 * @return	符合标签的用户列表
+	 */
+	@GetMapping("/search/tags")
+	public BaseResponse<List<User>> searchUsersByTags(@RequestParam(required = false) List<String> tagNameList) {
+		if (CollectionUtils.isEmpty(tagNameList)) {
+			throw new BusinessException(ErrorCode.PARAMS_ERROR);
+		}
+		List<User> userList = userService.searchUsersByTags(tagNameList);
+		return ResponseUtils.success(userList);
+	}
+
+	@PostMapping("/update")
+	public BaseResponse<Integer> updateUser(@RequestBody User user, HttpServletRequest request) {
+		// 校验当前参数是否为空
+		if (user == null || StringUtils.isAllBlank(user.getUsername(), user.getAvatarUrl(), user.getPhone(), user.getEmail(), user.getGender().toString())) {
+			throw new BusinessException(ErrorCode.PARAMS_ERROR);
+		}
+		// 1. 获取当前登录用户
+		User loginUser = userService.getLoginUser(request);
+		// 2. 校验权限
+		// 3. 操作修改
+		Integer result = userService.updateUser(user, loginUser);
+		return ResponseUtils.success(result);
+	}
+
+	/**
+	 * 根据ID删除用户
+	 *
+	 * @param id      用户ID
+	 * @param request 请求对象
+	 * @return 删除的用户数量
+	 */
+	@DeleteMapping("/delete")
+	public BaseResponse<Integer> deleteUser(@RequestParam Long id, HttpServletRequest request) {
+		if (request == null || id <= 0) {
+			throw new BusinessException(ErrorCode.PARAMS_ERROR);
+		}
+		if (!userService.isAdmin(request)) {
+			throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "用户非管理员");
+		}
+		Integer result = userService.deleteById(id);
+		return ResponseUtils.success(result);
+	}
+
 }

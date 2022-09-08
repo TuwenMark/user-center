@@ -19,6 +19,7 @@ public interface UserService extends IService<User> {
 	 * @param userAccount 要用户账号
 	 * @param userPassword 用户密码
 	 * @param checkPassword 二次输入密码
+	 * @param planetCode 星球编号
 	 * @return 用户唯一ID
 	 */
 	Long userRegister(String userAccount, String userPassword, String checkPassword, Integer planetCode);
@@ -50,6 +51,23 @@ public interface UserService extends IService<User> {
 	List<User> searchUsers(String userName);
 
 	/**
+	 * 根据标签列表查找用户
+	 *
+	 * @param tagNameList 标签列表
+	 * @return 符合标签的用户列表
+	 */
+	List<User> searchUsersByTags(List<String> tagNameList);
+
+	/**
+	 * 更新用户信息
+	 *
+	 * @param user 更新后的用户信息
+	 * @param user 当前登录的用户信息
+	 * @return 更新结果，1 成功，0 失败
+	 */
+	Integer updateUser(User user, User loginUser);
+
+	/**
 	 * 根据ID删除用户
 	 *
 	 * @param id 用户ID
@@ -58,10 +76,26 @@ public interface UserService extends IService<User> {
 	Integer deleteById(Long id);
 
 	/**
-	 * 根据标签列表查找用户
+	 * 获取当前登录用户
 	 *
-	 * @param tagNameList 标签列表
-	 * @return 符合标签的用户列表
+	 * @param request HTTP请求对象
+	 * @return 当前登录用户
 	 */
-	List<User> searchUsersByTags(List<String> tagNameList);
+	User getLoginUser(HttpServletRequest request);
+
+	/**
+	 * 判断是否是管理员
+	 *
+	 * @param request 请求对象
+	 * @return 判断结果
+	 */
+	Boolean isAdmin(HttpServletRequest request);
+
+	/**
+	 * 判断是否是管理员
+	 *
+	 * @param loginUser 当前登录用户
+	 * @return 判断结果
+	 */
+	Boolean isAdmin(User loginUser);
 }
