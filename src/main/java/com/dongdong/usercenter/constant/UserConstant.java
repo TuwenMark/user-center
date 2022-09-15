@@ -21,4 +21,9 @@ public interface UserConstant {
 	 * 管理员角色
 	 */
 	Integer ADMIN_ROLE = 1;
+
+	/**
+	 * 推荐功能的Redis缓存key
+	 */
+	String RECOMMEND_KEY = "dongdong:user:recommend:";
 }
