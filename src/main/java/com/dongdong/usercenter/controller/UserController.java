@@ -141,18 +141,16 @@ public class UserController {
 	 * @return 所有的用户列表
 	 */
 	@GetMapping("/recommend")
-	public BaseResponse<List<User>> recommendUsers() {
-		QueryWrapper queryWrapper = new QueryWrapper();
-		List<User> users = userService.list(queryWrapper);
-		List<User> safeUsers = users.stream().map(user -> userService.getSafeUser(user)).collect(Collectors.toList());
-		return ResponseUtils.success(safeUsers);
+	public BaseResponse<List<User>> recommendUsers(Long pageNum, Long pageSize, HttpServletRequest request) {
+		List<User> users = userService.recommendUsers(pageNum, pageSize, request);
+		return ResponseUtils.success(users);
 	}
 
 	/**
 	 * 根据标签查找用户
 	 *
 	 * @param tagNameList 标签列表
-	 * @return	符合标签的用户列表
+	 * @return 符合标签的用户列表
 	 */
 	@GetMapping("/search/tags")
 	public BaseResponse<List<User>> searchUsersByTags(@RequestParam(required = false) List<String> tagNameList) {

@@ -98,4 +98,21 @@ public interface UserService extends IService<User> {
 	 * @return 判断结果
 	 */
 	Boolean isAdmin(User loginUser);
+
+	/**
+	 * 分页获取推荐用户
+	 *
+	 * @param pageNum 当前页
+	 * @param pageSize 每页显示条数
+	 * @return 当前页的用户
+	 */
+	List<User> recommendUsers(Long pageNum, Long pageSize, HttpServletRequest request);
+
+	/**
+	 * 用户信息脱敏
+	 *
+	 * @param originUser 原始用户信息
+	 * @return 脱敏后的用户信息
+	 */
+	User getSafeUser(User originUser);
 }

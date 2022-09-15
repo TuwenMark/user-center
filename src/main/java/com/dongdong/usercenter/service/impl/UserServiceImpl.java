@@ -1,6 +1,7 @@
 package com.dongdong.usercenter.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.dongdong.usercenter.common.ErrorCode;
 import com.dongdong.usercenter.constant.UserConstant;
@@ -12,6 +13,8 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
@@ -20,10 +23,8 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -44,6 +45,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 	@Resource
 	UserMapper userMapper;
+
+	@Resource
+	StringRedisTemplate stringRedisTemplate;
 
 	/**
 	 * 用户注册
@@ -224,6 +228,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		}).map(this::getSafeUser).collect(Collectors.toList());
 	}
 
+	/**
+	 * 修改用户信息
+	 *
+	 * @param user 当前登录的用户信息
+	 * @param loginUser 当前登录用户
+	 * @return 修改结果
+	 */
 	@Override
 	public Integer updateUser(User user, User loginUser) {
 		// 判空
@@ -281,6 +292,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	 * @param originUser 原始用户信息
 	 * @return 脱敏后的用户信息
 	 */
+	@Override
 	public User getSafeUser(User originUser) {
 		if (originUser == null) {
 			throw new BusinessException(ErrorCode.NULL_ERROR, "请求用户为空");
@@ -344,6 +356,44 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	@Override
 	public Boolean isAdmin(User loginUser) {
 		return UserConstant.ADMIN_ROLE.equals(loginUser.getUserRole());
+	}
+
+	/**
+	 * 分页获取推荐用户
+	 *
+	 * @param pageNum 当前页
+	 * @param pageSize 每页显示条数
+	 * @return 当前页的用户
+	 */
+	@Override
+	public List<User> recommendUsers(Long pageNum, Long pageSize, HttpServletRequest request) {
+		Gson gson = new Gson();
+		// 获取缓存的key
+		Long userId = getLoginUser(request).getId();
+		String key = UserConstant.RECOMMEND_KEY + userId;
+		// 查询缓存,判断是否缓存存在
+		ValueOperations<String, String> operations = stringRedisTemplate.opsForValue();
+		String value = operations.get(key);
+		if (value != null) {
+			// 存在，经过反序列化，返回缓存
+			List<User> users = gson.fromJson(value, new TypeToken<List<User>>(){}.getType());
+			return users;
+		}
+		// 不存在则查询数据库
+		// 创建查询条件
+		QueryWrapper queryWrapper = new QueryWrapper();
+		// mybatis plus根据条件分页查询
+		Page page = new Page(pageNum, pageSize);
+		Page<User> userPage = userMapper.selectPage(page, queryWrapper);
+		// 获取分页对象中的用户数据并进行安全处理
+		List<User> users = userPage.getRecords().stream().map(user -> getSafeUser(user)).collect(Collectors.toList());
+		// 将处理后的用户数据序列化后存入缓存
+		try {
+			operations.set(key, gson.toJson(users), 30000, TimeUnit.MILLISECONDS);
+		} catch (Exception e) {
+			log.error("Redis set key error.", e);
+		}
+		return users;
 	}
 }
 
