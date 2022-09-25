@@ -1,4 +1,4 @@
-package com.dongdong.usercenter.model.domain.request;
+package com.dongdong.usercenter.model.domain.DTO;
 
 import lombok.Data;
 
@@ -18,4 +18,8 @@ public class UserLoginRequest implements Serializable {
 	private String userAccount;
 
 	private String userPassword;
+
+	private String phoneNumber;
+
+	private String code;
 }

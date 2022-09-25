@@ -21,6 +21,10 @@ public class ResponseUtils {
 		return new BaseResponse(20000, data, "OK", "");
 	}
 
+	public static <T> BaseResponse<T> success() {
+		return new BaseResponse(20000, "OK", "");
+	}
+
 	public static BaseResponse error(ErrorCode errorCode) {
 		return new BaseResponse(errorCode);
 	}

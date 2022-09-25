@@ -76,4 +76,11 @@ class UserServiceTest {
 		List<User> userList = userService.searchUsersByTags(tagNameList);
 		Assertions.assertNotNull(userList);
 	}
+
+	@Test
+	void testSendCode() {
+		String phoneNumber = "18698577021";
+		Boolean result = userService.checkPhoneNumber(phoneNumber);
+		Assertions.assertTrue(result);
+	}
 }

@@ -1,5 +1,7 @@
 package com.dongdong.usercenter.service.impl;
 
+import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -7,8 +9,10 @@ import com.dongdong.usercenter.common.ErrorCode;
 import com.dongdong.usercenter.constant.UserConstant;
 import com.dongdong.usercenter.exception.BusinessException;
 import com.dongdong.usercenter.mapper.UserMapper;
+import com.dongdong.usercenter.model.domain.DTO.UserLoginRequest;
 import com.dongdong.usercenter.model.domain.User;
 import com.dongdong.usercenter.service.UserService;
+import com.dongdong.usercenter.utils.UserHolder;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
@@ -21,9 +25,11 @@ import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -117,7 +123,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	}
 
 	/**
-	 * 用户登录
+	 * 用户账号密码登录
 	 *
 	 * @param userAccount  用户账号
 	 * @param userPassword 用户密码
@@ -125,7 +131,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	 * @return 基本的用户信息
 	 */
 	@Override
-	public User userLogin(String userAccount, String userPassword, HttpServletRequest request) {
+	public String userLoginByPassword(String userAccount, String userPassword, HttpServletRequest request) {
 		// 1. 校验账号
 		// 非空
 		if (StringUtils.isAnyBlank(userAccount, userPassword)) {
@@ -136,8 +142,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 			throw new BusinessException(ErrorCode.PARAMS_ERROR, "账户名称小于4位");
 		}
 		// 账户不包含特殊字符
-		String invalidPattern = "\\pP|\\pS|\\s+";
-		Matcher matcher = Pattern.compile(invalidPattern).matcher(userAccount);
+		Matcher matcher = Pattern.compile(UserConstant.ACCOUNT_REGEX).matcher(userAccount);
 		if (matcher.find()) {
 			throw new BusinessException(ErrorCode.PARAMS_ERROR, "账户名称包含特殊字符");
 		}
@@ -157,17 +162,128 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 			log.info("user login failed, userAccount and userPassword don't match.");
 			throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "用户不存在");
 		}
-
-		// 3. 用户信息脱敏
-		User safeUser = getSafeUser(user);
-
-		// 4. 记录用户的登录态Session
-		HttpSession session = request.getSession();
-		session.setAttribute(UserConstant.USER_LOGIN_STATE, safeUser);
-
+//		HttpSession session = request.getSession();
+//		session.setAttribute(UserConstant.USER_LOGIN_STATE, safeUser);
 		// 5. 返回基本的用户信息
-		return safeUser;
+//		return safeUser;
+		// 5. 存储脱敏后的用户信息，返回token
+		return storageUser(user);
 	}
+
+	/**
+	 * 发送短信验证码
+	 *
+	 * @param userLoginRequest 用户请求
+	 */
+	@Override
+	public void sendCode(UserLoginRequest userLoginRequest) {
+		// 校验手机号
+		String phoneNumber = userLoginRequest.getPhoneNumber();
+		if (StringUtils.isBlank(phoneNumber)) {
+			throw new BusinessException(ErrorCode.NULL_ERROR, "手机号为空");
+		}
+		if (!checkPhoneNumber(phoneNumber)) {
+			throw new BusinessException(ErrorCode.PARAMS_ERROR, "手机号格式不正确");
+		}
+		// 查询缓存是否有验证码
+		String code = stringRedisTemplate.opsForValue().get(UserConstant.CODE_KEY + phoneNumber);
+		if (StringUtils.isNotBlank(code)) {
+			throw new BusinessException(ErrorCode.TOO_FREQUENCY_ERROR, "当前验证码仍然有效，无需重复发送");
+		}
+		// 生成验证码
+		code = RandomUtil.randomNumbers(6);
+		// 利用Redis存储验证码
+		stringRedisTemplate.opsForValue().set(UserConstant.CODE_KEY + phoneNumber, code, UserConstant.CODE_KEY_TTL, TimeUnit.SECONDS);
+		// 发送验证码
+		log.info("发送短信验证码成功，验证码：{}", code);
+	}
+
+	/**
+	 * 用户手机号验证码登录
+	 *
+	 * @param userLoginRequest 用户登录请求体参数
+	 * @param request 请求对象
+	 * @return 脱敏后的用户信息
+	 */
+	@Override
+	public String userLoginByCode(UserLoginRequest userLoginRequest, HttpServletRequest request) {
+		// 判空
+		String phoneNumber = userLoginRequest.getPhoneNumber();
+		String code = userLoginRequest.getCode();
+		if (StringUtils.isAnyBlank(phoneNumber, code)) {
+			throw new BusinessException(ErrorCode.PARAMS_ERROR, "手机号或验证码为空");
+		}
+		// 验证手机号格式是否合法
+		if (!checkPhoneNumber(phoneNumber)) {
+			throw new BusinessException(ErrorCode.PARAMS_ERROR, "手机号格式不正确");
+		}
+		// 校验验证码
+		if (!checkCode(phoneNumber, code)) {
+			throw new BusinessException(ErrorCode.PARAMS_ERROR, "验证码不正确或已失效");
+		}
+		// 查询数据库是否有对应用户
+		User user = userMapper.selectOne(new QueryWrapper<User>().eq("phone", phoneNumber));
+		if (user == null) {
+			// 无，注册新用户
+			user = new User();
+			user.setUsername(UserConstant.USERNAME_PREFIX + RandomUtil.randomString(10));
+			user.setAvatarUrl("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTT_zA0VRXeib6OTeNO3H6erGB-pB0oSF2jma5wt665BHeN0QFAtWcIKtnzmRKYnnG3o_I&usqp=CAU");
+			user.setPhone(phoneNumber);
+			userMapper.insert(user);
+		}
+		// 移除缓存的验证码
+		stringRedisTemplate.delete(UserConstant.CODE_KEY + phoneNumber);
+		// 存储脱敏后的用户信息，返回token
+		return storageUser(user);
+	}
+
+	/**
+	 * 存储用户到Redis，返回token
+	 * @param user 当前登录用户
+	 * @return token
+	 */
+	private String storageUser(User user) {
+		User safeUser = getSafeUser(user);
+		// 4. 将用户存入Redis
+		// 4.1 生成随机token
+		String token = UUID.randomUUID().toString(true);
+		// 4.2 存入Redis的key
+		String tokenKey = UserConstant.LOGIN_KEY + token;
+		// 4.3 存入的用户信息，JSON格式,过期时间30 分钟
+		Gson gson = new Gson();
+		stringRedisTemplate.opsForValue().set(tokenKey, gson.toJson(safeUser), UserConstant.LOGIN_KEY_TTL,TimeUnit.MINUTES);
+		return token;
+	}
+
+	/**
+	 * 校验手机号是否合法
+	 *
+	 * @param phoneNumber 电话号码
+	 * @return 是否合法，TRUE 合法，FALSE 不合法
+	 */
+	@Override
+	public Boolean checkPhoneNumber(String phoneNumber) {
+		boolean result = Pattern.compile(UserConstant.PHONE_REGEX).matcher(phoneNumber).matches();
+		return result;
+	}
+
+	/**
+	 * 校验验证码
+	 *
+	 * @param phoneNumber 手机号码
+	 * @param code 验证码
+	 * @return 校验结果，TRUE 符合， FALSE 不符合
+	 */
+	@Override
+	public Boolean checkCode(String phoneNumber, String code) {
+		Boolean result = false;
+		String cacheCode = stringRedisTemplate.opsForValue().get(UserConstant.CODE_KEY + phoneNumber);
+		if (StringUtils.isNotBlank(cacheCode) && cacheCode.equals(code)) {
+			result = true;
+		}
+		return result;
+	}
+
 
 	/**
 	 * 用户注销
@@ -238,6 +354,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	@Override
 	public Integer updateUser(User user, User loginUser) {
 		// 判空
+		if (loginUser == null) {
+			throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "用户未登录或登录信息过期");
+		}
 		Long userId = user.getId();
 		Long loginUserId = loginUser.getId();
 		if (userId == null || loginUserId == null) {
@@ -322,17 +441,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	 */
 	@Override
 	public User getLoginUser(HttpServletRequest request) {
-		if (request == null) {
-			throw new BusinessException(ErrorCode.PARAMS_ERROR);
-		}
-		Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
-		if (userObj == null) {
+		User user = UserHolder.getUser();
+//		if (request == null) {
+//			throw new BusinessException(ErrorCode.PARAMS_ERROR);
+//		}
+//		Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
+		if (user == null) {
 			throw new BusinessException(ErrorCode.NOT_AUTH_ERROR);
 		}
-		if (!(userObj instanceof User)) {
-			throw new BusinessException(ErrorCode.NOT_AUTH_ERROR);
-		}
-		return (User) userObj;
+		return user;
 	}
 
 	/**
@@ -389,7 +506,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		List<User> users = userPage.getRecords().stream().map(user -> getSafeUser(user)).collect(Collectors.toList());
 		// 将处理后的用户数据序列化后存入缓存
 		try {
-			operations.set(key, gson.toJson(users), 30000, TimeUnit.MILLISECONDS);
+			operations.set(key, gson.toJson(users), UserConstant.RECOMMEND_KEY_TTL, TimeUnit.MINUTES);
 		} catch (Exception e) {
 			log.error("Redis set key error.", e);
 		}
