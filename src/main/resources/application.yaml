@@ -20,7 +20,7 @@ spring:
     password: 123456
   # Session失效时间（分钟）
   session:
-    timeout: 86400
+    timeout: 120
     # 将Session存储到redis
     store-type: redis
   datasource:
@@ -41,3 +41,6 @@ mybatis-plus:
       logic-not-delete-value: 0 # 逻辑未删除值(默认为 0)
   #configuration:
     #log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  config: classpath:logback-spring.xml

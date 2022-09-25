@@ -2,6 +2,7 @@ package com.dongdong.usercenter.service;
 
 import com.dongdong.usercenter.model.domain.User;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.dongdong.usercenter.model.domain.DTO.UserLoginRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -14,25 +15,58 @@ import java.util.List;
 public interface UserService extends IService<User> {
 
 	/**
-	 * 用户注册
+	 * 发送短信验证码
 	 *
-	 * @param userAccount 要用户账号
-	 * @param userPassword 用户密码
-	 * @param checkPassword 二次输入密码
-	 * @param planetCode 星球编号
-	 * @return 用户唯一ID
+	 * @param userLoginRequest 用户请求
 	 */
+	void sendCode(UserLoginRequest userLoginRequest);
+
+	/**
+	 * 校验手机号是否合法
+	 *
+	 * @param phoneNumber 手机号码
+	 * @return 是否合法
+	 */
+	Boolean checkPhoneNumber(String phoneNumber);
+
+	/**
+	 * 校验验证码
+	 *
+	 * @param phoneNumber 手机号码
+	 * @param code 验证码
+	 * @return 验证码是否有效
+	 */
+	Boolean checkCode(String phoneNumber, String code);
+
+		/**
+		 * 用户注册
+		 *
+		 * @param userAccount 要用户账号
+		 * @param userPassword 用户密码
+		 * @param checkPassword 二次输入密码
+		 * @param planetCode 星球编号
+		 * @return 用户唯一ID
+		 */
 	Long userRegister(String userAccount, String userPassword, String checkPassword, Integer planetCode);
 
 	/**
-	 * 用户登录
+	 * 用户使用账号密码登录
 	 *
 	 * @param userAccount 用户账号
 	 * @param userPassword 用户密码
 	 * @param request 请求对象
 	 * @return 用户的基本信息
 	 */
-	User userLogin(String userAccount, String userPassword, HttpServletRequest request);
+	String userLoginByPassword(String userAccount, String userPassword, HttpServletRequest request);
+
+	/**
+	 * 用户使用手机号验证码登录
+	 *
+	 * @param userLoginRequest 用户登录请求体参数
+	 * @param httpServletRequest 请求对象
+	 * @return 脱敏后的用户 信息
+	 */
+	String userLoginByCode(UserLoginRequest userLoginRequest, HttpServletRequest httpServletRequest);
 
 	/**
 	 * 用户注销
@@ -78,7 +112,6 @@ public interface UserService extends IService<User> {
 	/**
 	 * 获取当前登录用户
 	 *
-	 * @param request HTTP请求对象
 	 * @return 当前登录用户
 	 */
 	User getLoginUser(HttpServletRequest request);
@@ -115,4 +148,6 @@ public interface UserService extends IService<User> {
 	 * @return 脱敏后的用户信息
 	 */
 	User getSafeUser(User originUser);
+
+
 }

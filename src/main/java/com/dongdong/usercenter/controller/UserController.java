@@ -3,13 +3,13 @@ package com.dongdong.usercenter.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.dongdong.usercenter.common.BaseResponse;
 import com.dongdong.usercenter.common.ErrorCode;
-import com.dongdong.usercenter.constant.UserConstant;
 import com.dongdong.usercenter.exception.BusinessException;
+import com.dongdong.usercenter.model.domain.DTO.UserLoginRequest;
+import com.dongdong.usercenter.model.domain.DTO.UserRegisterRequest;
 import com.dongdong.usercenter.model.domain.User;
-import com.dongdong.usercenter.model.domain.request.UserLoginRequest;
-import com.dongdong.usercenter.model.domain.request.UserRegisterRequest;
 import com.dongdong.usercenter.service.impl.UserServiceImpl;
 import com.dongdong.usercenter.utils.ResponseUtils;
+import com.dongdong.usercenter.utils.UserHolder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.annotation.Validated;
@@ -65,9 +65,9 @@ public class UserController {
 	 * @return 用户基本信息
 	 */
 	@PostMapping("/login")
-	public BaseResponse<User> userLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest httpServletRequest) {
+	public BaseResponse<String> userLoginByPassword(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest httpServletRequest) {
 		if (userLoginRequest == null) {
-			throw new BusinessException(ErrorCode.NULL_ERROR, "请求对象为空");
+			throw new BusinessException(ErrorCode.NULL_ERROR, "账号或密码为空");
 		}
 		// 简单的校验，不涉及业务逻辑
 		String userAccount = userLoginRequest.getUserAccount();
@@ -75,8 +75,40 @@ public class UserController {
 		if (StringUtils.isAnyBlank(userAccount, userPassword)) {
 			throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号或密码为空");
 		}
-		User safeUser = userService.userLogin(userAccount, userPassword, httpServletRequest);
-		return ResponseUtils.success(safeUser);
+		String token = userService.userLoginByPassword(userAccount, userPassword, httpServletRequest);
+		return ResponseUtils.success(token);
+	}
+
+	/**
+	 * 发送验证码
+	 *
+	 * @param userLoginRequest 用户登录请求
+	 * @return 发送结果
+	 */
+	@PostMapping("/code")
+	public BaseResponse sendCode(@RequestBody UserLoginRequest userLoginRequest) {
+		// 判空
+		if (userLoginRequest == null) {
+			throw new BusinessException(ErrorCode.NULL_ERROR, "请求为空");
+		}
+		userService.sendCode(userLoginRequest);
+		return ResponseUtils.success();
+	}
+
+	/**
+	 * 用户手机号登录接口
+	 *
+	 * @param userLoginRequest   用户登录请求体参数
+	 * @param httpServletRequest 请求对象
+	 * @return 用户基本信息
+	 */
+	@PostMapping("/login/phone")
+	public BaseResponse<String> userLoginByCode(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest httpServletRequest) {
+		if (userLoginRequest == null) {
+			throw new BusinessException(ErrorCode.NULL_ERROR, "请求对象为空");
+		}
+		String token = userService.userLoginByCode(userLoginRequest, httpServletRequest);
+		return ResponseUtils.success(token);
 	}
 
 	/**
@@ -85,7 +117,7 @@ public class UserController {
 	 * @param httpServletRequest 请求对象
 	 * @return 成功返回值
 	 */
-	@PostMapping("/logout")
+	@GetMapping("/logout")
 	public BaseResponse<Integer> userLogin(HttpServletRequest httpServletRequest) {
 		if (httpServletRequest == null) {
 			throw new BusinessException(ErrorCode.NULL_ERROR, "请求对象为空");
@@ -103,7 +135,8 @@ public class UserController {
 	@GetMapping("/current")
 	public BaseResponse<User> getCurrentUser(HttpServletRequest request) {
 		// 获取当前用户信息的ID
-		User originUser = (User) request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
+//		User originUser = (User) request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
+		User originUser = UserHolder.getUser();
 		if (originUser == null) {
 			throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "用户未登录");
 		}
@@ -164,14 +197,14 @@ public class UserController {
 	@PostMapping("/update")
 	public BaseResponse<Integer> updateUser(@RequestBody User user, HttpServletRequest request) {
 		// 校验当前参数是否为空
-		if (user == null || StringUtils.isAllBlank(user.getUsername(), user.getAvatarUrl(), user.getPhone(), user.getEmail(), user.getGender().toString())) {
+		if (user == null || StringUtils.isAllBlank(user.getUsername(), user.getAvatarUrl(), user.getPhone(), user.getEmail(), String.valueOf(user.getGender()))) {
 			throw new BusinessException(ErrorCode.PARAMS_ERROR);
 		}
 		// 1. 获取当前登录用户
-		User loginUser = userService.getLoginUser(request);
+		User currentUser = UserHolder.getUser();
 		// 2. 校验权限
 		// 3. 操作修改
-		Integer result = userService.updateUser(user, loginUser);
+		Integer result = userService.updateUser(user, currentUser);
 		return ResponseUtils.success(result);
 	}
 

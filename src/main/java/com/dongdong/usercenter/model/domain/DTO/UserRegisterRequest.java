@@ -1,4 +1,4 @@
-package com.dongdong.usercenter.model.domain.request;
+package com.dongdong.usercenter.model.domain.DTO;
 
 import lombok.Data;
 

@@ -11,6 +11,7 @@ public enum ErrorCode{
 	NULL_ERROR(40001, "请求数据为空", ""),
 	NOT_LOGIN_ERROR(40100, "用户未登录", ""),
 	NOT_AUTH_ERROR(40101, "用户无权限", ""),
+	TOO_FREQUENCY_ERROR(42900, "验证码发送太频繁",""),
 	NOT_FOUND_ERROR(40400, "请求资源不存在", ""),
 	SYSTEM_ERROR(50000, "系统错误", "");
 

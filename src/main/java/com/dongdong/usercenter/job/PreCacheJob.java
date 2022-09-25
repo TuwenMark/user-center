@@ -10,7 +10,6 @@ import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -42,7 +41,7 @@ public class PreCacheJob {
 	 */
 	private List<Long> hotUserList = Arrays.asList(6L);
 
-	@Scheduled(cron = "0 21 22 * * ?")
+//	@Scheduled(cron = "0 21 22 * * ?")
 	private void doCacheRecommendUsers() {
 		System.out.println("缓存预热开始！");
 		ValueOperations<String, String> operations = stringRedisTemplate.opsForValue();
