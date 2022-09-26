@@ -4,10 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.dongdong.usercenter.common.BaseResponse;
 import com.dongdong.usercenter.common.ErrorCode;
 import com.dongdong.usercenter.exception.BusinessException;
-import com.dongdong.usercenter.model.domain.DTO.UserLoginRequest;
-import com.dongdong.usercenter.model.domain.DTO.UserRegisterRequest;
+import com.dongdong.usercenter.model.DTO.UserLoginRequest;
+import com.dongdong.usercenter.model.DTO.UserRegisterRequest;
 import com.dongdong.usercenter.model.domain.User;
-import com.dongdong.usercenter.service.impl.UserServiceImpl;
+import com.dongdong.usercenter.service.UserService;
 import com.dongdong.usercenter.utils.ResponseUtils;
 import com.dongdong.usercenter.utils.UserHolder;
 import org.apache.commons.collections4.CollectionUtils;
@@ -31,8 +31,9 @@ import java.util.stream.Collectors;
 @RequestMapping("/user")
 @CrossOrigin(origins = {"http://localhost:5173"}, allowCredentials = "true")
 public class UserController {
+
 	@Resource
-	private UserServiceImpl userService;
+	private UserService userService;
 
 	/**
 	 * 用户注册接口

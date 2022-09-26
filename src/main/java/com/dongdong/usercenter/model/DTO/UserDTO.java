@@ -1,4 +1,4 @@
-package com.dongdong.usercenter.model.domain.DTO;
+package com.dongdong.usercenter.model.DTO;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;

@@ -52,6 +52,7 @@ public class LoginInterceptor implements HandlerInterceptor {
 		// 4、用户存在，将用户信息存入ThreadLocal
 		User loginUser = new Gson().fromJson(userJson, User.class);
 		UserHolder.saveUser(loginUser);
+		UserHolder.setUserKey(userKey);
 		// 5、刷新缓存时间：session会自动刷新缓存时间，redis需要手动刷新，此处演示如何在自己维护的类中注入对象
 		stringRedisTemplate.expire(userKey, UserConstant.LOGIN_KEY_TTL, TimeUnit.MINUTES);
 		// 6、放行

@@ -7,7 +7,9 @@ package com.dongdong.usercenter.common;
  * @create: 2022-05-28 22:17
  **/
 public enum ErrorCode{
+	// 请求的参数不正确或为空
 	PARAMS_ERROR(40000, "请求参数错误", ""),
+	// 返回的数据为空
 	NULL_ERROR(40001, "请求数据为空", ""),
 	NOT_LOGIN_ERROR(40100, "用户未登录", ""),
 	NOT_AUTH_ERROR(40101, "用户无权限", ""),

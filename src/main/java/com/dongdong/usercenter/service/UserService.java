@@ -2,7 +2,7 @@ package com.dongdong.usercenter.service;
 
 import com.dongdong.usercenter.model.domain.User;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.dongdong.usercenter.model.domain.DTO.UserLoginRequest;
+import com.dongdong.usercenter.model.DTO.UserLoginRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
