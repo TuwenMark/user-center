@@ -53,6 +53,11 @@ public interface UserConstant {
 	Long LOGIN_KEY_TTL = 30L;
 
 	/**
+	 * 缓存预热的分布式锁key
+	 */
+	String PRECACHE_LOCK_KEY = "dongdong:user:precache:lock";
+
+	/**
 	 * Cookie中token请求头
 	 */
 	String TOKEN_HEADER = "Authorization";

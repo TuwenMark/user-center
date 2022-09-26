@@ -10,6 +10,16 @@ import com.dongdong.usercenter.model.domain.User;
  **/
 public class UserHolder {
 	private static final ThreadLocal<User> THREAD_LOCAL = new ThreadLocal<>();
+
+	private static String userKey;
+
+	public static void setUserKey(String userKey) {
+		UserHolder.userKey = userKey;
+	}
+
+	public static String getUserKey() {
+		return userKey;
+	}
 	
 	public static void saveUser(User user) {
 		THREAD_LOCAL.set(user);

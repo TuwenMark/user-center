@@ -9,7 +9,7 @@ import com.dongdong.usercenter.common.ErrorCode;
 import com.dongdong.usercenter.constant.UserConstant;
 import com.dongdong.usercenter.exception.BusinessException;
 import com.dongdong.usercenter.mapper.UserMapper;
-import com.dongdong.usercenter.model.domain.DTO.UserLoginRequest;
+import com.dongdong.usercenter.model.DTO.UserLoginRequest;
 import com.dongdong.usercenter.model.domain.User;
 import com.dongdong.usercenter.service.UserService;
 import com.dongdong.usercenter.utils.UserHolder;
@@ -293,7 +293,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	 */
 	@Override
 	public Integer userLogout(HttpServletRequest request) {
-		request.getSession().removeAttribute(UserConstant.USER_LOGIN_STATE);
+		stringRedisTemplate.delete(UserHolder.getUserKey());
 		return 20000;
 	}
 
