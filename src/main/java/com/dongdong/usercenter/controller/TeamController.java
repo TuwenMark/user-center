@@ -1,12 +1,12 @@
 package com.dongdong.usercenter.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dongdong.usercenter.common.BaseResponse;
 import com.dongdong.usercenter.common.ErrorCode;
 import com.dongdong.usercenter.exception.BusinessException;
 import com.dongdong.usercenter.model.DTO.TeamCreateRequest;
 import com.dongdong.usercenter.model.DTO.TeamRequest;
+import com.dongdong.usercenter.model.DTO.TeamSearchRequest;
+import com.dongdong.usercenter.model.VO.TeamSearchResponse;
 import com.dongdong.usercenter.model.domain.Team;
 import com.dongdong.usercenter.service.TeamService;
 import com.dongdong.usercenter.utils.ResponseUtils;
@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * @program: user-center
@@ -120,23 +121,17 @@ public class TeamController {
 	/**
 	 * 根据条件分页查询队伍
 	 *
-	 * @param teamRequest 队伍请求对象
+	 * @param teamSearchRequest 队伍请求对象
 	 * @return 查询结果
 	 */
-	@GetMapping("/query/list")
-	public BaseResponse<Page<Team>> queryTeamsByPage(TeamRequest teamRequest) {
+	@GetMapping("/search/list")
+	public BaseResponse<List<TeamSearchResponse>> searchTeams(TeamSearchRequest teamSearchRequest) {
 		// 判空
-		if (teamRequest == null) {
+		if (teamSearchRequest == null) {
 			throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数错误！");
 		}
-		// 分页查找队伍
-		Team team = new Team();
-		BeanUtils.copyProperties(teamRequest, team);
-		Page<Team> teamPage = teamService.page(new Page<>(teamRequest.getPageNum(), teamRequest.getPageSize()), new QueryWrapper<>(team));
-		if (teamPage == null) {
-			throw new BusinessException(ErrorCode.NULL_ERROR, "查询结果为空！");
-		}
-		return ResponseUtils.success(teamPage);
+		List<TeamSearchResponse> teams = teamService.searchTeams(teamSearchRequest);
+		return ResponseUtils.success(teams);
 	}
 
 

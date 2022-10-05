@@ -26,9 +26,30 @@ public class MvcConfig implements WebMvcConfigurer {
 						"/user/login/**",
 						"/user/code",
 //						"/user/recommend",
-						"/user/register"
+						"/user/register",
+						"/**/webjars/**",
+						// knife4j的页面
+						"/**/doc.html",
+						// 防止控制台报错，对功能没有影响，实际没啥用
+						"/**/favicon.ico",
+						// 请求接口信息
+						"/**/swagger-resources",
+						// 请求接口信息
+						"/**/api-docs"
 				);
 	}
+//
+//	/***
+//	 * 配置静态资源访问拦截
+//	 * @param registry
+//	 */
+//	@Override
+//	public void addResourceHandlers(ResourceHandlerRegistry registry){
+//		registry.addResourceHandler("swagger-ui.html", "doc.html")
+//				.addResourceLocations("classpath:/META-INF/resources/");
+//		registry.addResourceHandler("/webjars/**")
+//				.addResourceLocations("classpath:/META-INF/resources/webjars/");
+//	}
 
 //	/**
 //	 * 配置跨域

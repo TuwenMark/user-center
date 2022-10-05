@@ -1,6 +1,5 @@
 package com.dongdong.usercenter.model.DTO;
 
-import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
 import javax.validation.constraints.Positive;
@@ -10,12 +9,15 @@ import java.util.Date;
 /**
  * 用户实体类
  *
- * @TableName user
+ * @author Mr.Ye
  */
-@TableName(value ="user")
 @Data
 public class UserDTO implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    /**
+     * 序列化
+     */
+    private static final long serialVersionUID = 361680310313760401L;
 
     /**
      * 用户唯一标识

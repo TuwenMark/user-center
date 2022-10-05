@@ -1,24 +1,31 @@
-package com.dongdong.usercenter.model.domain;
+package com.dongdong.usercenter.model.VO;
 
-import com.baomidou.mybatisplus.annotation.*;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
+import org.apache.ibatis.type.Alias;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
- * 队伍
- * @TableName team
+ * 搜索队伍返回对象包装类
+ *
+ * @author Mr.Ye
  */
-@TableName(value ="team")
 @Data
-public class Team implements Serializable {
+@Alias("TeamSearchResponse")
+public class TeamSearchResponse implements Serializable {
+
+    /**
+     * 序列化
+     */
+    private static final long serialVersionUID = -7780513556148917961L;
+
     /**
      * id
      */
-    @TableId(type = IdType.AUTO)
-    private Long id;
+    private Long teamId;
 
     /**
      * 队伍名称
@@ -42,19 +49,9 @@ public class Team implements Serializable {
     private LocalDateTime expireTime;
 
     /**
-     * 创建人用户id
-     */
-    private Long userId;
-
-    /**
      * 0 - 公开，1 - 私有，2 - 加密
      */
     private Integer status;
-
-    /**
-     * 密码
-     */
-    private String password;
 
     /**
      * 创建时间
@@ -63,17 +60,14 @@ public class Team implements Serializable {
     private LocalDateTime createTime;
 
     /**
-     * 更新时间
+     * 最后更新时间
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updateTime;
 
     /**
-     * 是否删除
+     * 成员列表：首位的是创建人
      */
-    @TableLogic
-    private Integer isDelete;
+    private List<UserVO> userVOList;
 
-    @TableField(exist = false)
-    private static final long serialVersionUID = 1L;
 }
