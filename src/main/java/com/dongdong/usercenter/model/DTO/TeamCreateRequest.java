@@ -1,12 +1,13 @@
 package com.dongdong.usercenter.model.DTO;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 队伍请求参数包装类
+ * 创建队伍请求参数包装类
  * @author Mr.Ye
  */
 @Data
@@ -40,6 +41,7 @@ public class TeamCreateRequest implements Serializable {
     /**
      * 过期时间
      */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime expireTime;
 
     /**

@@ -40,11 +40,9 @@ public class LoginInterceptor implements HandlerInterceptor {
 		}
 		// 1、请求头获取token
 		String token = request.getHeader(UserConstant.TOKEN_HEADER);
-		System.out.println("token: " + token);
 		// 2、从Redis中获取用户信息
 		String userKey = UserConstant.LOGIN_KEY + token;
 		String userJson = stringRedisTemplate.opsForValue().get(userKey);
-		System.out.println("User:" + userJson);
 		// 3、用户不存在，拦截
 		if (StringUtils.isBlank(userJson)) {
 			throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "用户未登录，请重新登录！");

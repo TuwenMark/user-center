@@ -6,6 +6,8 @@ import com.dongdong.usercenter.common.ErrorCode;
 import com.dongdong.usercenter.exception.BusinessException;
 import com.dongdong.usercenter.mapper.TeamMapper;
 import com.dongdong.usercenter.model.DTO.TeamCreateRequest;
+import com.dongdong.usercenter.model.DTO.TeamSearchRequest;
+import com.dongdong.usercenter.model.VO.TeamSearchResponse;
 import com.dongdong.usercenter.model.domain.Team;
 import com.dongdong.usercenter.model.domain.User;
 import com.dongdong.usercenter.model.domain.UserTeam;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -85,7 +88,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
 		// 3.7. 校验用户最多创建 5 个队伍
 		QueryWrapper<Team> wrapper = new QueryWrapper<>();
 		Long userId = user.getId();
-		wrapper.eq("userId", userId);
+		wrapper.eq("user_id", userId);
 		Long hasTeamNum = teamMapper.selectCount(wrapper);
 		if (hasTeamNum >= 5) {
 			throw new BusinessException(ErrorCode.PARAMS_ERROR, "普通用户最多只能同时创建5个队伍");
@@ -109,6 +112,19 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
 			throw new BusinessException(ErrorCode.SYSTEM_ERROR, "创建队伍失败");
 		}
 		return teamId;
+	}
+
+	/**
+	 * 根据条件查询队伍列表
+	 *
+	 * @param teamSearchRequest 查询队伍列表条件包装类
+	 * @return 符合条件的队伍列表
+	 */
+	@Override
+	public List<TeamSearchResponse> searchTeams(TeamSearchRequest teamSearchRequest) {
+		List<TeamSearchResponse> teams = teamMapper.searchTeams(teamSearchRequest);
+		System.out.println(teams);
+		return teams;
 	}
 }
 

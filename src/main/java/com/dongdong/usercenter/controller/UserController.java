@@ -119,7 +119,7 @@ public class UserController {
 	 * @return 成功返回值
 	 */
 	@GetMapping("/logout")
-	public BaseResponse<Integer> userLogin(HttpServletRequest httpServletRequest) {
+	public BaseResponse<Integer> userLogout(HttpServletRequest httpServletRequest) {
 		if (httpServletRequest == null) {
 			throw new BusinessException(ErrorCode.NULL_ERROR, "请求对象为空");
 		}
