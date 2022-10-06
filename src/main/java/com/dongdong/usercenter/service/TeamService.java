@@ -2,8 +2,10 @@ package com.dongdong.usercenter.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.dongdong.usercenter.model.DTO.TeamCreateRequest;
+import com.dongdong.usercenter.model.DTO.TeamJoinRequest;
 import com.dongdong.usercenter.model.DTO.TeamSearchRequest;
-import com.dongdong.usercenter.model.VO.TeamSearchResponse;
+import com.dongdong.usercenter.model.DTO.TeamUpdateRequest;
+import com.dongdong.usercenter.model.VO.TeamUserVO;
 import com.dongdong.usercenter.model.domain.Team;
 
 import java.util.List;
@@ -16,5 +18,9 @@ import java.util.List;
 public interface TeamService extends IService<Team> {
 	Long createTeam(TeamCreateRequest teamCreateRequest);
 
-	List<TeamSearchResponse> searchTeams(TeamSearchRequest teamSearchRequest);
+	List<TeamUserVO> searchTeams(TeamSearchRequest teamSearchRequest);
+
+	void updateTeam(TeamUpdateRequest teamUpdateRequest);
+
+	void joinTeam(TeamJoinRequest teamJoinRequest);
 }

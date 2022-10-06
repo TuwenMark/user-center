@@ -19,11 +19,6 @@ public class TeamCreateRequest implements Serializable {
     private static final long serialVersionUID = -3880080545314712926L;
 
     /**
-     * id
-     */
-    private Long id;
-
-    /**
      * 队伍名称
      */
     private String name;
@@ -43,11 +38,6 @@ public class TeamCreateRequest implements Serializable {
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime expireTime;
-
-    /**
-     * 创建人用户id
-     */
-    private Long userId;
 
     /**
      * 0 - 公开，1 - 私有，2 - 加密

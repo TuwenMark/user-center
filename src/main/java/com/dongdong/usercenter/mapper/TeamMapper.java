@@ -1,7 +1,8 @@
 package com.dongdong.usercenter.mapper;
 
 import com.dongdong.usercenter.model.DTO.TeamSearchRequest;
-import com.dongdong.usercenter.model.VO.TeamSearchResponse;
+import com.dongdong.usercenter.model.DTO.TeamUpdateRequest;
+import com.dongdong.usercenter.model.VO.TeamUserVO;
 import com.dongdong.usercenter.model.domain.Team;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
@@ -21,7 +22,9 @@ public interface TeamMapper extends BaseMapper<Team> {
 	 * @param teamSearchRequest 查询队伍列表条件包装类
 	 * @return 符合条件的队伍列表
 	 */
-	List<TeamSearchResponse> searchTeams(TeamSearchRequest teamSearchRequest);
+	List<TeamUserVO> searchTeams(TeamSearchRequest teamSearchRequest);
+
+	void updateTeam(TeamUpdateRequest teamUpdateRequest);
 }
 
 

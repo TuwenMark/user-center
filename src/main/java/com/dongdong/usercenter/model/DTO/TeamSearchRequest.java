@@ -17,7 +17,7 @@ public class TeamSearchRequest extends PageRequest implements Serializable {
     /**
      * 序列化ID
      */
-    private static final long serialVersionUID = -3880080545314712926L;
+    private static final long serialVersionUID = -6409320428411517880L;
 
     /**
      * 队伍ID
