@@ -1,4 +1,4 @@
-package com.dongdong.usercenter.model.VO;
+package com.dongdong.usercenter.model.DTO;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
@@ -6,22 +6,20 @@ import org.apache.ibatis.type.Alias;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
- * 搜索队伍返回对象包装类
+ * 修改队伍请求封装类
  *
  * @author Mr.Ye
  */
 @Data
-@Alias("TeamSearchResponse")
-public class TeamSearchResponse implements Serializable {
+@Alias("TeamUpdateRequest")
+public class TeamUpdateRequest implements Serializable {
 
     /**
      * 序列化
      */
-    private static final long serialVersionUID = -7780513556148917961L;
-
+    private static final long serialVersionUID = 1596307488661681318L;
     /**
      * id
      */
@@ -49,25 +47,24 @@ public class TeamSearchResponse implements Serializable {
     private LocalDateTime expireTime;
 
     /**
+     * 队长id
+     */
+    private Long leaderId;
+
+    /**
      * 0 - 公开，1 - 私有，2 - 加密
      */
     private Integer status;
 
     /**
-     * 创建时间
+     * 密码
      */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime createTime;
+    private String password;
 
     /**
-     * 最后更新时间
+     * 更新时间
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updateTime;
-
-    /**
-     * 成员列表：首位的是创建人
-     */
-    private List<UserVO> userVOList;
 
 }

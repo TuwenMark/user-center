@@ -5,27 +5,28 @@
 <mapper namespace="com.dongdong.usercenter.mapper.TeamMapper">
 
     <resultMap id="BaseResultMap" type="com.dongdong.usercenter.model.domain.Team">
-            <id property="id" column="id" jdbcType="BIGINT"/>
-            <result property="name" column="name" jdbcType="VARCHAR"/>
-            <result property="description" column="description" jdbcType="VARCHAR"/>
-            <result property="maxNum" column="max_num" jdbcType="INTEGER"/>
-            <result property="expireTime" column="expire_time" jdbcType="TIMESTAMP"/>
-            <result property="userId" column="leader_id" jdbcType="BIGINT"/>
-            <result property="status" column="status" jdbcType="INTEGER"/>
-            <result property="password" column="password" jdbcType="VARCHAR"/>
-            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
-            <result property="isDelete" column="is_delete" jdbcType="TINYINT"/>
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="maxNum" column="max_num" jdbcType="INTEGER"/>
+        <result property="expireTime" column="expire_time" jdbcType="TIMESTAMP"/>
+        <result property="leaderId" column="leader_id" jdbcType="BIGINT"/>
+        <result property="status" column="status" jdbcType="INTEGER"/>
+        <result property="password" column="password" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="isDelete" column="is_delete" jdbcType="TINYINT"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,name,description,
+        id
+        ,name,description,
         max_num,expire_time,user_id,
         status,password,create_time,
         update_time,is_delete
     </sql>
 
-    <resultMap id="teamMap" type="TeamSearchResponse">
+    <resultMap id="teamMap" type="TeamUserVO">
         <id property="teamId" column="team_id"/>
         <result property="name" column="name"/>
         <result property="description" column="description"/>
@@ -34,7 +35,7 @@
         <result property="status" column="status"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
-        
+
         <collection property="userVOList" ofType="UserVO">
             <id property="userId" column="user_id"/>
             <result property="username" column="username"/>
@@ -45,12 +46,13 @@
         select * from team t, user_team ut, user u
         <where>
             t.id = ut.team_id and
-            u.id = ut.user_id
+            u.id = ut.user_id and
+            t.expire_time > now()
             <if test="id != null">
                 and t.id = #{id}
             </if>
             <if test="keyWords != null">
-                and (name like CONCAT('%', #{keyWords}, '%')  or description like CONCAT('%', #{keyWords}, '%'))
+                and (name like CONCAT('%', #{keyWords}, '%') or description like CONCAT('%', #{keyWords}, '%'))
             </if>
             <if test="maxNum != null">
                 and max_num = #{maxNum}
@@ -58,9 +60,25 @@
             <if test="userId != null">
                 and t.user_id = #{userId}
             </if>
+            <if test="status == null">
+                and (status = 0 || status = 2)
+            </if>
             <if test="status != null">
                 and status = #{status}
             </if>
         </where>
     </select>
+
+    <update id="updateTeam" parameterType="TeamUpdateRequest">
+        update team
+        set name        = #{name},
+            description = #{description},
+            max_num      = #{maxNum},
+            expire_time  = #{expireTime},
+            leader_id    = #{leaderId},
+            status      = #{status},
+            password    = #{password},
+            update_time  = now()
+        where id = #{id}
+    </update>
 </mapper>
