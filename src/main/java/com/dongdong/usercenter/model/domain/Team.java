@@ -36,6 +36,11 @@ public class Team implements Serializable {
     private Integer maxNum;
 
     /**
+     * 当前人数
+     */
+    private Integer currentNum;
+
+    /**
      * 过期时间
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

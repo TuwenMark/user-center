@@ -23,4 +23,8 @@ public interface TeamService extends IService<Team> {
 	void updateTeam(TeamUpdateRequest teamUpdateRequest);
 
 	void joinTeam(TeamJoinRequest teamJoinRequest);
+
+	void quitTeam(Long teamId);
+
+	void deleteTeam(Long teamId);
 }

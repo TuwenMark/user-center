@@ -24,6 +24,7 @@ import java.util.List;
  **/
 @RestController
 @RequestMapping("/team")
+@CrossOrigin(origins = {"http://localhost:5173"}, allowCredentials = "true")
 public class TeamController {
 
 	@Resource
@@ -44,30 +45,6 @@ public class TeamController {
 		// 插入数据
 		Long teamId = teamService.createTeam(teamCreateRequest);
 		return ResponseUtils.success(teamId);
-	}
-
-	/**
-	 * 删除队伍
-	 *
-	 * @param id 队伍ID
- 	 * @return 删除结果
-	 */
-	@DeleteMapping("/delete")
-	public BaseResponse<Boolean> deleteTeam(@RequestParam Long id) {
-		// 判空
-		if (id == null || id <= 0) {
-			throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数错误！");
-		}
-		// 查找是否存在此队伍
-		Team team = teamService.getById(id);
-		if (team == null) {
-			throw new BusinessException(ErrorCode.NULL_ERROR, "队伍不存在！");
-		}
-		// 删除队伍并判断删除结果
-		if (!teamService.removeById(id)) {
-			throw new BusinessException(ErrorCode.SYSTEM_ERROR, "删除队伍失败！");
-		}
-		return ResponseUtils.success(true);
 	}
 
 	/**
@@ -135,6 +112,38 @@ public class TeamController {
 			throw new BusinessException(ErrorCode.PARAMS_ERROR);
 		}
 		teamService.joinTeam(teamJoinRequest);
+		return ResponseUtils.success(true);
+	}
+
+	/**
+	 * 退出队伍
+	 *
+	 * @param teamId 队伍ID
+	 * @return 是否退出队伍
+	 */
+	@GetMapping("/quit/{teamId}")
+	public BaseResponse<Boolean> quitTeam(@PathVariable Long teamId) {
+		if (teamId == null || teamId <= 0) {
+			throw new BusinessException(ErrorCode.PARAMS_ERROR, "队伍不存在！");
+		}
+		teamService.quitTeam(teamId);
+		return ResponseUtils.success(true);
+	}
+
+	/**
+	 * 解散队伍
+	 *
+	 * @param teamId 队伍ID
+	 * @return 解散结果
+	 */
+	@DeleteMapping("/delete/{teamId}")
+	public BaseResponse<Boolean> deleteTeam(@PathVariable Long teamId) {
+		// 判空
+		if (teamId == null || teamId <= 0) {
+			throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数错误！");
+		}
+		// 查找是否存在此队伍
+		teamService.deleteTeam(teamId);
 		return ResponseUtils.success(true);
 	}
 
