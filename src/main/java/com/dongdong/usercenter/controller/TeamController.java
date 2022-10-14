@@ -89,7 +89,7 @@ public class TeamController {
 	 * @param teamSearchRequest 队伍请求对象
 	 * @return 查询结果
 	 */
-	@GetMapping("/search/list")
+	@GetMapping("/list")
 	public BaseResponse<List<TeamUserVO>> searchTeams(TeamSearchRequest teamSearchRequest) {
 		// 判空
 		if (teamSearchRequest == null) {
@@ -106,7 +106,7 @@ public class TeamController {
 	 * @return 是否成功加入
 	 */
 	@PostMapping("/join")
-	public BaseResponse<Boolean> joinTeam(TeamJoinRequest teamJoinRequest) {
+	public BaseResponse<Boolean> joinTeam(@RequestBody TeamJoinRequest teamJoinRequest) {
 		// 判空
 		if (teamJoinRequest == null) {
 			throw new BusinessException(ErrorCode.PARAMS_ERROR);

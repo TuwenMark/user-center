@@ -30,7 +30,9 @@
         <id property="teamId" column="team_id"/>
         <result property="name" column="name"/>
         <result property="description" column="description"/>
+        <result property="leaderId" column="leader_id"/>
         <result property="maxNum" column="max_num"/>
+        <result property="currentNum" column="current_num"/>
         <result property="expireTime" column="expire_time"/>
         <result property="status" column="status"/>
         <result property="createTime" column="create_time"/>
@@ -66,6 +68,7 @@
             <if test="status != null">
                 and status = #{status}
             </if>
+            and t.is_delete = 0
         </where>
     </select>
 
@@ -73,12 +76,12 @@
         update team
         set name        = #{name},
             description = #{description},
-            max_num      = #{maxNum},
-            expire_time  = #{expireTime},
-            leader_id    = #{leaderId},
+            max_num     = #{maxNum},
+            expire_time = #{expireTime},
+            leader_id   = #{leaderId},
             status      = #{status},
             password    = #{password},
-            update_time  = now()
+            update_time = now()
         where id = #{id}
     </update>
 </mapper>
