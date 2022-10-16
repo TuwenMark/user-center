@@ -60,7 +60,7 @@
                 and max_num = #{maxNum}
             </if>
             <if test="userId != null">
-                and t.user_id = #{userId}
+                and user_id = #{userId}
             </if>
             <if test="status == null">
                 and (status = 0 || status = 2)
@@ -69,6 +69,7 @@
                 and status = #{status}
             </if>
             and t.is_delete = 0
+            and ut.is_delete = 0
         </where>
     </select>
 

@@ -134,6 +134,10 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
 		if (status != null && status == 1 && !userService.isAdmin(UserHolder.getUser())) {
 			throw new BusinessException(ErrorCode.PARAMS_ERROR, "私有队伍仅管理员允许查询!");
 		}
+		// 如果没有搜索关键词，设置此条件为null
+		if (StringUtils.isBlank(teamSearchRequest.getKeyWords())) {
+			teamSearchRequest.setKeyWords(null);
+		}
 		List<TeamUserVO> teams = teamMapper.searchTeams(teamSearchRequest);
 		return teams;
 	}
@@ -151,7 +155,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
 			throw new BusinessException(ErrorCode.PARAMS_ERROR, "修改参数为空");
 		}
 		// 查询队伍是否存在
-		Long teamId = teamUpdateRequest.getTeamId();
+		Long teamId = teamUpdateRequest.getId();
 		if (teamId == null || teamId <= 0) {
 			throw new BusinessException(ErrorCode.NULL_ERROR, "队伍不存在！");
 		}
@@ -343,6 +347,15 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
 		if (updateNum < 1 || deleteNum < 1) {
 			throw new BusinessException(ErrorCode.SYSTEM_ERROR, "删除队伍失败！");
 		}
+	}
+
+	@Override
+	public List<TeamUserVO> searchMyTeams(String keyWords) {
+		User CurrentUser = UserHolder.getUser();
+		TeamSearchRequest teamSearchRequest = new TeamSearchRequest();
+		teamSearchRequest.setUserId(CurrentUser.getId());
+		teamSearchRequest.setKeyWords(keyWords);
+		return searchTeams(teamSearchRequest);
 	}
 }
 
