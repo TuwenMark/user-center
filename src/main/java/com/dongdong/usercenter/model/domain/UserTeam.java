@@ -30,7 +30,7 @@ public class UserTeam implements Serializable {
     private Long teamId;
 
     /**
-     * 加入时间
+     * 加入时间，第二次加入会重置加入时间
      */
     private LocalDateTime joinTime;
 
@@ -40,7 +40,7 @@ public class UserTeam implements Serializable {
     private LocalDateTime createTime;
 
     /**
-     * 
+     * 更新时间
      */
     private LocalDateTime updateTime;
 

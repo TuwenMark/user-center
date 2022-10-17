@@ -34,7 +34,7 @@ public class TeamCreateRequest implements Serializable {
     private Integer maxNum;
 
     /**
-     * 过期时间
+     * 过期时间，前端必须按照这个格式传递时间的JSON字符串
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime expireTime;

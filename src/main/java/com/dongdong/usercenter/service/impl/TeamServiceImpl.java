@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.dongdong.usercenter.common.ErrorCode;
 import com.dongdong.usercenter.exception.BusinessException;
 import com.dongdong.usercenter.mapper.TeamMapper;
-import com.dongdong.usercenter.mapper.UserTeamMapper;
 import com.dongdong.usercenter.model.DTO.TeamCreateRequest;
 import com.dongdong.usercenter.model.DTO.TeamJoinRequest;
 import com.dongdong.usercenter.model.DTO.TeamSearchRequest;
@@ -23,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
@@ -39,9 +39,6 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
 
 	@Resource
 	private TeamMapper teamMapper;
-
-	@Resource
-	private UserTeamMapper userTeamMapper;
 
 	@Resource
 	private UserTeamService userTeamService;
@@ -141,6 +138,11 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
 		return teams;
 	}
 
+	/**
+	 * 更新队伍信息
+	 *
+	 * @param teamUpdateRequest 更新队伍请求封装
+	 */
 	@Transactional(rollbackFor = Exception.class)
 	@Override
 	public void updateTeam(TeamUpdateRequest teamUpdateRequest) {
@@ -176,6 +178,11 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
 		teamMapper.updateTeam(teamUpdateRequest);
 	}
 
+	/**
+	 * 加入队伍
+	 *
+	 * @param teamJoinRequest 加入队伍请求封装
+	 */
 	@Transactional(rollbackFor = Exception.class)
 	@Override
 	public void joinTeam(TeamJoinRequest teamJoinRequest) {
@@ -199,31 +206,29 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
 		}
 		// 加密队伍必须要密码正确
 		String joinPassword = teamJoinRequest.getPassword();
-		if(TeamStatusEnum.SECRET.equals(teamStatus)) {
+		if (TeamStatusEnum.SECRET.equals(teamStatus)) {
 			if (StringUtils.isBlank(joinPassword) || !joinPassword.equals(team.getPassword())) {
 				throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码错误！");
 			}
 		}
 		// 队伍人数没有达到上限
-		QueryWrapper queryWrapper = new QueryWrapper();
-		queryWrapper.eq("team_id", teamId);
-		Long hasJoinedUsers = userTeamMapper.selectCount(queryWrapper);
+		Integer hasJoinedUsers = team.getCurrentNum();
 		if (hasJoinedUsers >= team.getMaxNum()) {
 			throw new BusinessException(ErrorCode.PARAMS_ERROR, "当前队伍已满，请加入其他队伍！");
 		}
 		// 加入或创建的队伍最多5个
 		Long userId = UserHolder.getUser().getId();
-		queryWrapper = new QueryWrapper();
+		QueryWrapper<UserTeam> queryWrapper = new QueryWrapper<>();
 		queryWrapper.eq("user_id", userId);
-		Long hasJoinedTeams = userTeamMapper.selectCount(queryWrapper);
+		Long hasJoinedTeams = userTeamService.count(queryWrapper);
 		if (hasJoinedTeams >= 5) {
 			throw new BusinessException(ErrorCode.PARAMS_ERROR, "普通用户最多可创建或加入5支队伍！");
 		}
 		// 不能重复加入队伍
-		queryWrapper = new QueryWrapper();
+		queryWrapper = new QueryWrapper<>();
 		queryWrapper.eq("team_id", teamId);
 		queryWrapper.eq("user_id", userId);
-		Long userHasJoinedTeams = userTeamMapper.selectCount(queryWrapper);
+		Long userHasJoinedTeams = userTeamService.count(queryWrapper);
 		if (userHasJoinedTeams > 0) {
 			throw new BusinessException(ErrorCode.PARAMS_ERROR, "不允许重复加入队伍！");
 		}
@@ -232,9 +237,111 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
 		userTeam.setUserId(userId);
 		userTeam.setTeamId(teamId);
 		userTeam.setJoinTime(LocalDateTime.now());
-		int result = userTeamMapper.insert(userTeam);
-		if (result < 0 || userTeam.getId() == null) {
+		Boolean result = userTeamService.save(userTeam);
+		if (!result || userTeam.getId() == null) {
 			throw new BusinessException(ErrorCode.SYSTEM_ERROR, "加入队伍失败！");
+		}
+		// 更新队伍人数
+		team.setCurrentNum(hasJoinedUsers + 1);
+		int updateNum = teamMapper.updateById(team);
+		if (updateNum < 1) {
+			throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新队伍人数失败！");
+		}
+	}
+
+	/**
+	 * 退出队伍
+	 *
+	 * @param teamId 队伍ID
+	 */
+	@Transactional(rollbackFor = Exception.class)
+	@Override
+	public void quitTeam(Long teamId) {
+		// 校验队伍是否存在以及当前用户是否在队伍中
+		if (teamId == null || teamId <= 0) {
+			throw new BusinessException(ErrorCode.PARAMS_ERROR, "队伍不存在！");
+		}
+		User user = UserHolder.getUser();
+		Long userId = user.getId();
+		QueryWrapper<UserTeam> queryWrapper = new QueryWrapper<>();
+		queryWrapper.eq("user_id", userId);
+		queryWrapper.eq("team_id", teamId);
+		long count = userTeamService.count(queryWrapper);
+		Team team = teamMapper.selectById(teamId);
+		if (team == null || count == 0) {
+			throw new BusinessException(ErrorCode.PARAMS_ERROR, "队伍不存在或用户还未加入此队伍！");
+		}
+		// 队伍人数 -1，再判断如果队伍只剩一人，解散队伍
+		Integer currentNum = team.getCurrentNum();
+		Long leaderId = team.getLeaderId();
+		team.setCurrentNum(currentNum - 1);
+		int updateNum = 0;
+		if (currentNum == 1) {
+			// 更新队伍人数
+			updateNum = teamMapper.updateById(team);
+			int deleteNum = teamMapper.deleteById(teamId);
+			if (deleteNum < 1) {
+				throw new BusinessException(ErrorCode.SYSTEM_ERROR, "解散队伍失败！");
+			}
+		} else {
+			// 队伍不止一人，如果是队长退出，权限移交给第二早加入的人
+			if (userId.equals(leaderId)) {
+				queryWrapper = new QueryWrapper<>();
+				queryWrapper.eq("team_id", teamId);
+				queryWrapper.last("order by join_time asc limit 2");
+				List<UserTeam> userTeamList = userTeamService.list(queryWrapper);
+				if (CollectionUtils.isEmpty(userTeamList) || userTeamList.size() <= 1) {
+					throw new BusinessException(ErrorCode.SYSTEM_ERROR, "队伍人数不足2人！");
+				}
+				Long nextTeamLeaderId = userTeamList.get(1).getUserId();
+				// 设置teamLeader
+				team.setLeaderId(nextTeamLeaderId);
+				// 更新队伍人数和teamLeader
+				updateNum = teamMapper.updateById(team);
+			}
+		}
+		// 移除关联关系
+		boolean removeNum = userTeamService.remove(queryWrapper);
+		// 判断是否更新成功
+		if (updateNum < 1 || !removeNum) {
+			throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新信息失败！");
+		}
+	}
+
+	/**
+	 * 解散队伍
+	 *
+	 * @param teamId 队伍ID
+	 */
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public void deleteTeam(Long teamId) {
+		// 1. 校验队伍是否存在
+		if (teamId == null || teamId <= 0) {
+			throw new BusinessException(ErrorCode.PARAMS_ERROR, "队伍不存在！");
+		}
+		Team team = teamMapper.selectById(teamId);
+		if (team == null) {
+			throw new BusinessException(ErrorCode.NULL_ERROR, "队伍不存在！");
+		}
+		// 2. 当前用户是队长
+		User user = UserHolder.getUser();
+		if (!team.getLeaderId().equals(user.getId())){
+			throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "仅队长允许解散队伍！");
+		}
+		// 3. 删除关联关系
+		QueryWrapper<UserTeam> queryWrapper = new QueryWrapper();
+		queryWrapper.eq("team_id", teamId);
+		boolean remove = userTeamService.remove(queryWrapper);
+		if (!remove){
+			throw new BusinessException(ErrorCode.SYSTEM_ERROR, "移除关联关系失败！");
+		}
+		// 4. 更新队伍人数并删除队伍
+		team.setCurrentNum(0);
+		int updateNum = teamMapper.updateById(team);
+		int deleteNum = teamMapper.deleteById(teamId);
+		if (updateNum < 1 || deleteNum < 1) {
+			throw new BusinessException(ErrorCode.SYSTEM_ERROR, "删除队伍失败！");
 		}
 	}
 }
