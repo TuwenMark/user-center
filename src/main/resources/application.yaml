@@ -48,3 +48,9 @@ mybatis-plus:
 
 logging:
   config: classpath:logback-spring.xml
+
+com:
+  dongdong:
+    usercenter:
+      business:
+        matchNumber: 6

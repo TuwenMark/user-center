@@ -1,8 +1,8 @@
 package com.dongdong.usercenter.service;
 
-import com.dongdong.usercenter.model.domain.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.dongdong.usercenter.model.DTO.UserLoginRequest;
+import com.dongdong.usercenter.model.domain.User;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -149,5 +149,11 @@ public interface UserService extends IService<User> {
 	 */
 	User getSafeUser(User originUser);
 
-
+	/**
+	 * 根据tag列表进行用户匹配
+	 *
+	 * @param matchNumber 匹配的条数
+	 * @return 匹配的用户列表
+	 */
+	List<User> matchUsers(Integer matchNumber);
 }

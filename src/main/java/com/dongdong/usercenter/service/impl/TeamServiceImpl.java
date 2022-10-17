@@ -349,6 +349,12 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
 		}
 	}
 
+	/**
+	 * 根据条件搜索我创建或加入的队伍
+	 *
+	 * @param keyWords 搜索关键词
+	 * @return 符合条件的队伍列表
+	 */
 	@Override
 	public List<TeamUserVO> searchMyTeams(String keyWords) {
 		User CurrentUser = UserHolder.getUser();

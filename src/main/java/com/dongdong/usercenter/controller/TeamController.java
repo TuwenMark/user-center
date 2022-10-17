@@ -90,8 +90,8 @@ public class TeamController {
 	 * @param teamSearchRequest 队伍请求对象
 	 * @return 查询结果
 	 */
-	@GetMapping("/list")
-	public BaseResponse<List<TeamUserVO>> searchTeams(@RequestParam TeamSearchRequest teamSearchRequest) {
+	@PostMapping("/list")
+	public BaseResponse<List<TeamUserVO>> searchTeams(@RequestBody TeamSearchRequest teamSearchRequest) {
 		// 判空
 		if (teamSearchRequest == null) {
 			throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数错误！");
