@@ -12,6 +12,7 @@ import com.dongdong.usercenter.utils.ResponseUtils;
 import com.dongdong.usercenter.utils.UserHolder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,6 +35,9 @@ public class UserController {
 
 	@Resource
 	private UserService userService;
+
+	@Value("${com.dongdong.usercenter.business.matchNumber}")
+	private Integer matchNumber;
 
 	/**
 	 * 用户注册接口
@@ -135,8 +139,6 @@ public class UserController {
 	 */
 	@GetMapping("/current")
 	public BaseResponse<User> getCurrentUser(HttpServletRequest request) {
-		// 获取当前用户信息的ID
-//		User originUser = (User) request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
 		User originUser = UserHolder.getUser();
 		if (originUser == null) {
 			throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "用户未登录");
@@ -226,6 +228,17 @@ public class UserController {
 		}
 		Integer result = userService.deleteById(id);
 		return ResponseUtils.success(result);
+	}
+
+	/**
+	 * 依据tags进行大数据伙伴匹配
+	 *
+	 * @return 与用户最匹配的用户列表
+	 */
+	@GetMapping("/match")
+	public BaseResponse<List<User>> matchUsers() {
+		List<User> userList = userService.matchUsers(matchNumber);
+		return ResponseUtils.success(userList);
 	}
 
 }

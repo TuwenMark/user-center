@@ -12,11 +12,13 @@ import com.dongdong.usercenter.mapper.UserMapper;
 import com.dongdong.usercenter.model.DTO.UserLoginRequest;
 import com.dongdong.usercenter.model.domain.User;
 import com.dongdong.usercenter.service.UserService;
+import com.dongdong.usercenter.utils.AlgorithmUtils;
 import com.dongdong.usercenter.utils.UserHolder;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.util.Pair;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
@@ -26,10 +28,7 @@ import org.springframework.util.DigestUtils;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -202,7 +201,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	 * 用户手机号验证码登录
 	 *
 	 * @param userLoginRequest 用户登录请求体参数
-	 * @param request 请求对象
+	 * @param request          请求对象
 	 * @return 脱敏后的用户信息
 	 */
 	@Override
@@ -239,6 +238,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 	/**
 	 * 存储用户到Redis，返回token
+	 *
 	 * @param user 当前登录用户
 	 * @return token
 	 */
@@ -251,7 +251,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		String tokenKey = UserConstant.LOGIN_KEY + token;
 		// 4.3 存入的用户信息，JSON格式,过期时间30 分钟
 		Gson gson = new Gson();
-		stringRedisTemplate.opsForValue().set(tokenKey, gson.toJson(safeUser), UserConstant.LOGIN_KEY_TTL,TimeUnit.MINUTES);
+		stringRedisTemplate.opsForValue().set(tokenKey, gson.toJson(safeUser), UserConstant.LOGIN_KEY_TTL, TimeUnit.MINUTES);
 		return token;
 	}
 
@@ -271,7 +271,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	 * 校验验证码
 	 *
 	 * @param phoneNumber 手机号码
-	 * @param code 验证码
+	 * @param code        验证码
 	 * @return 校验结果，TRUE 符合， FALSE 不符合
 	 */
 	@Override
@@ -347,7 +347,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	/**
 	 * 修改用户信息
 	 *
-	 * @param user 当前登录的用户信息
+	 * @param user      当前登录的用户信息
 	 * @param loginUser 当前登录用户
 	 * @return 修改结果
 	 */
@@ -367,7 +367,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 			throw new BusinessException(ErrorCode.NOT_AUTH_ERROR);
 		}
 		// 操作修改
-		if(userMapper.selectById(userId) ==null) {
+		if (userMapper.selectById(userId) == null) {
 			throw new BusinessException(ErrorCode.NULL_ERROR);
 		}
 		return userMapper.updateById(user);
@@ -478,7 +478,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	/**
 	 * 分页获取推荐用户
 	 *
-	 * @param pageNum 当前页
+	 * @param pageNum  当前页
 	 * @param pageSize 每页显示条数
 	 * @return 当前页的用户
 	 */
@@ -493,7 +493,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		String value = operations.get(key);
 		if (value != null) {
 			// 存在，经过反序列化，返回缓存
-			List<User> users = gson.fromJson(value, new TypeToken<List<User>>(){}.getType());
+			List<User> users = gson.fromJson(value, new TypeToken<List<User>>() {
+			}.getType());
 			return users;
 		}
 		// 不存在则查询数据库
@@ -511,6 +512,46 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 			log.error("Redis set key error.", e);
 		}
 		return users;
+	}
+
+	/**
+	 * 根据tag列表进行用户匹配
+	 *
+	 * @param matchNumber 匹配的条数
+	 * @return 匹配的用户列表
+	 */
+	@Override
+	public List<User> matchUsers(Integer matchNumber) {
+		// 1. 获取当前登录用户的tag列表
+		User currentUser = UserHolder.getUser();
+		String currentUserTags = currentUser.getTags();
+		Gson gson = new Gson();
+		List<String> tagList = gson.fromJson(currentUserTags, new TypeToken<List<String>>() {
+		}.getType());
+		// 2. 根据条件获取所有的用户userList，查询结果：id tags，条件：tags不为null
+		List<User> userList = userMapper.selectList(new QueryWrapper<User>().select("id", "tags").isNotNull("tags"));
+		// 3. 创建List<Pain<Long, String>> userIdAndDistance，存储用户id:编辑距离（Map不好按照value进行排序）
+		List<Pair<Long, Integer>> userIdAndDistance = new ArrayList<>();
+		// 4. 遍历userList，剔除tags为空的用户和自己，其余用户与登录用户根据tags取最小编辑距离，存入userIdAndDistance
+		userList.forEach(user -> {
+			String userTags = user.getTags();
+			if (StringUtils.isBlank(userTags) || currentUser.getId().equals(user.getId())) {
+				return;
+			}
+			int res = AlgorithmUtils.minDistance(tagList, gson.fromJson(userTags, new TypeToken<List<String>>() {
+			}.getType()));
+			userIdAndDistance.add(new Pair<>(user.getId(), res));
+		});
+		// 5. userIdAndDistance根据编辑距离升序排序，获取前5个用户的id列表matchedUserIdList
+		List<Long> matchedUserIdList = userIdAndDistance.stream().sorted(Comparator.comparingInt(Pair::getValue)).limit(matchNumber).map(pair -> pair.getKey()).collect(Collectors.toList());
+		// 6. 根据matchedUserIdList的id，获取用户，存入Map(id:List<User>）（根据id列表查询出来用户并不是按照原先顺序返回用户,List<User>中只有一个user对象）
+		Map<Long, List<User>> idUserMap = userMapper.selectList(new QueryWrapper<User>().in("id", matchedUserIdList)).stream()
+				.map(user -> getSafeUser(user))
+				.collect(Collectors.groupingBy(User::getId));
+		// 7. 根据matchedUserIdList的id顺序去Map(id:User）中取出用户，获得排序后的matchedUserList并返回
+		List<User> matchedUserList = new ArrayList<>();
+		matchedUserIdList.forEach(id -> matchedUserList.add(idUserMap.get(id).get(0)));
+		return matchedUserList;
 	}
 }
 
