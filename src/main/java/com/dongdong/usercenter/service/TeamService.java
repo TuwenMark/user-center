@@ -27,4 +27,6 @@ public interface TeamService extends IService<Team> {
 	void quitTeam(Long teamId);
 
 	void deleteTeam(Long teamId);
+
+	List<TeamUserVO> searchMyTeams(String keyWords);
 }

@@ -38,9 +38,19 @@ public class TeamUserVO implements Serializable {
     private String description;
 
     /**
+     * 创建人用户id
+     */
+    private Long leaderId;
+
+    /**
      * 最大人数
      */
     private Integer maxNum;
+
+    /**
+     * 当前人数
+     */
+    private Integer currentNum;
 
     /**
      * 过期时间
